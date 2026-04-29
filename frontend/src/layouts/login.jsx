@@ -24,7 +24,14 @@ const Login = () => {
     try {
       const { data } = await authApi.login(formData);
       auth.login(data.token, data.user);
-      navigate(location.state?.from?.pathname || "/courses", { replace: true });
+      
+      if (data.user.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (data.user.role === "instructor") {
+        navigate("/instructor", { replace: true });
+      } else {
+        navigate(location.state?.from?.pathname || "/courses", { replace: true });
+      }
     } catch (err) {
       setError(err.response?.data?.msg || err.response?.data?.error || "Login failed");
     } finally {

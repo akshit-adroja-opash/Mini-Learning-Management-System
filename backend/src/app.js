@@ -13,7 +13,10 @@ import quizzesRoutes from "./routes/quizzesRoutes.js";
 import discussionsRoutes from "./routes/discussionsRoutes.js";
 import certificatesRoutes from "./routes/certificatesRoutes.js";
 import analyticRoutes from "./routes/analyticsRoutes.js";
+import moduleRoutes from "./routes/moduleRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
+import lessonRoutes from "./routes/lessonRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -36,10 +39,14 @@ app.use("/api/quizzes", quizzesRoutes);
 app.use("/api/discussions", discussionsRoutes);
 app.use("/api/analytics", analyticRoutes);
 app.use("/api/certificates", certificatesRoutes);
+app.use("/api/modules", moduleRoutes);
+app.use("/api/lessons", lessonRoutes);
+app.use("/api/admin", adminRoutes);
 
-// Server
+// connectDB
 connectDB()
 
+// error handler
 app.use(errorHandler)
 
 app.listen(PORT, () => {

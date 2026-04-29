@@ -1,0 +1,40 @@
+.admin-users {
+  padding: 20px;
+}
+
+.search-box {
+  margin-bottom: 15px;
+  padding: 8px;
+  width: 250px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.users-table tr:hover {
+  background: #f9f9f9;
+}
+
+.delete-btn {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #d9363e;
+}
+
+.pagination {
+  margin-top: 15px;
+}

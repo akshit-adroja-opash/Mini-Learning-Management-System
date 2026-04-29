@@ -7,7 +7,7 @@ export function CourseCard({ course }) {
       <h3>{course.title}</h3>
       <p>{course.description}</p>
       <ProgressBar value={course.progressPercent || 0} />
-      <Link to={`/courses/${course.id}`}>View course</Link>
+      <Link to={`/courses/${course._id}`}>View course</Link>
     </article>
   );
 }

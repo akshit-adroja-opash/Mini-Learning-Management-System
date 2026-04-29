@@ -1,7 +1,9 @@
 import { apiClient } from "./client";
 
-export const progressApi = {
-  saveLessonProgress: (lessonId, payload) =>
-    apiClient.patch(`/lessons/${lessonId}/progress`, payload),
-  getLessonProgress: (lessonId) => apiClient.get(`/lessons/${lessonId}/progress`),
+export const saveProgress = (data) => {
+  return apiClient.post("/progress", data);
+};
+
+export const getProgress = (lessonId) => {
+  return apiClient.get(`/progress/${lessonId}`);
 };

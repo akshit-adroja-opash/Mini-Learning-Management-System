@@ -1,9 +1,22 @@
 import { apiClient } from "./client";
+import axiosInstance from "./axiosInstance";
 
-export const courseApi = {
-  listCourses: () => apiClient.get("/courses"),
-  getCourse: (courseId) => apiClient.get(`/courses/${courseId}`),
-  createCourse: (payload) => apiClient.post("/instructor/courses", payload),
-  updateCourse: (courseId, payload) =>
-    apiClient.patch(`/instructor/courses/${courseId}`, payload),
+export const createCourse = (data) => {
+  return apiClient.post("/courses", data);
 };
+
+export const updateCourse = (courseId, data) => {
+  return apiClient.patch(`/courses/${courseId}`, data);
+};
+
+export const getCourse = (courseId) => {
+  return apiClient.get(`/courses/${courseId}`);
+};
+
+export const listCourses = () => {
+  return apiClient.get("/courses");
+};
+
+export const getInstructorCourses = () => {
+  return axiosInstance.get("/courses/instructor");
+}

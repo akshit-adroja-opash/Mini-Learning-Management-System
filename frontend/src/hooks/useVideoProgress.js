@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { progressApi } from "../api/progressApi";
+import { saveProgress as saveProgressApi } from "../api/progressApi";
 
-export function useVideoProgress({ lessonId, initialPositionSeconds = 0 }) {
+function useVideoProgress({ lessonId, initialPositionSeconds = 0 }) {
   const saveTimerRef = useRef(null);
   const [positionSeconds, setPositionSeconds] = useState(initialPositionSeconds);
   const [watchedSeconds, setWatchedSeconds] = useState(0);
 
-  const saveProgress = useCallback(
+  const debouncedSave = useCallback(
     (nextPositionSeconds, nextWatchedSeconds) => {
       if (!lessonId) return;
 
       window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => {
-        progressApi.saveLessonProgress(lessonId, {
-          lastPositionSeconds: nextPositionSeconds,
+        saveProgressApi({
+          lessonId,
           watchedSeconds: nextWatchedSeconds,
+          duration: null,
         });
       }, 10000);
     },
@@ -26,11 +27,11 @@ export function useVideoProgress({ lessonId, initialPositionSeconds = 0 }) {
       setPositionSeconds(nextPositionSeconds);
       setWatchedSeconds((current) => {
         const nextWatchedSeconds = Math.max(current, nextPositionSeconds);
-        saveProgress(nextPositionSeconds, nextWatchedSeconds);
+        debouncedSave(nextPositionSeconds, nextWatchedSeconds);
         return nextWatchedSeconds;
       });
     },
-    [saveProgress]
+    [debouncedSave]
   );
 
   useEffect(() => {
@@ -43,3 +44,5 @@ export function useVideoProgress({ lessonId, initialPositionSeconds = 0 }) {
     recordProgress,
   };
 }
+
+export default useVideoProgress;

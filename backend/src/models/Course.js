@@ -27,6 +27,11 @@ const courseSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    promoVideoUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     instructor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

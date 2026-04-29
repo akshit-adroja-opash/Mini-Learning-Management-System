@@ -25,3 +25,10 @@ export const unenroll = async (req, res) => {
 
   res.json({ msg: 'Unenrolled' });
 };
+export const getMyEnrollments = async (req, res) => {
+  const enrollments = await Enrollment.find({ learner: req.user._id })
+    .populate("course", "title description thumbnailUrl category")
+    .sort("-createdAt");
+
+  res.json(enrollments);
+};

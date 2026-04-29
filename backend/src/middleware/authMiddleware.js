@@ -3,11 +3,15 @@ import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) return res.status(401).json({ msg: "No token" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ msg: "No token provided" });
+    }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
 
     req.user = await User.findById(decoded.id).select("-passwordHash");
 
@@ -17,4 +21,13 @@ export const protect = async (req, res, next) => {
   } catch (err) {
     res.status(401).json({ msg: "Invalid token" });
   }
+};
+
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ msg: "Forbidden" });
+    }
+    next();
+  };
 };

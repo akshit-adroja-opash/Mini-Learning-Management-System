@@ -1,6 +1,9 @@
 import { apiClient } from "./client";
 
-export const certificateApi = {
-  getCertificate: (certId) => apiClient.get(`/certificates/${certId}`),
-  verifyCertificate: (certId) => apiClient.get(`/verify/${certId}`),
+export const verifyCertificate = (id) => {
+  return apiClient.get(`/certificates/verify/${id}`);
+};
+
+export const getCertificate = (id) => {
+  return apiClient.get(`/certificates/${id}`);
 };

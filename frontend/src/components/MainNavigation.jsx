@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export function MainNavigation() {
@@ -12,16 +12,28 @@ export function MainNavigation() {
 
   return (
     <header className="main-navigation">
-      <Link className="brand" to="/courses">
+      <NavLink className="brand" to="/">
         Mini LMS
-      </Link>
+      </NavLink>
       <nav>
-        <NavLink to="/courses">Catalog</NavLink>
+        {auth.isAuthenticated && <NavLink to="/courses">Courses</NavLink>}
         {auth.isAuthenticated ? (
           <>
-            <NavLink to="/learner">Learner</NavLink>
-            <NavLink to="/instructor">Instructor</NavLink>
-            <NavLink to="/admin">Admin</NavLink>
+            {auth.user.role === "admin" && (
+              <>
+                <NavLink to="/admin">Admin Dashboard</NavLink>
+                <NavLink to="/admin/users">Users</NavLink>
+                <NavLink to="/admin/courses">Courses</NavLink>
+              </>
+            )}
+            {auth.user.role === "instructor" && (
+              <>
+                <NavLink to="/instructor">Dashboard</NavLink>
+                <NavLink to="/instructor/create">Create Course</NavLink>
+                <NavLink to="/instructor/analytics">Analytics</NavLink>
+              </>
+            )}
+            {auth.user.role === "learner" && <NavLink to="/learner">Dashboard</NavLink>}
           </>
         ) : (
           <>
@@ -41,3 +53,5 @@ export function MainNavigation() {
     </header>
   );
 }
+
+
