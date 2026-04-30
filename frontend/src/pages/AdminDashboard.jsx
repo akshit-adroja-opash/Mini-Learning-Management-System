@@ -1,9 +1,39 @@
 import { Container, Typography, Box, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, IconButton } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { Users, Book, BarChart, Trash2, Video, VideoOff } from 'lucide-react';
 
 const AdminDashboard = () => {
+  const queryClient = useQueryClient();
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (id) => api.delete(`/admin/users/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-users']);
+      queryClient.invalidateQueries(['admin-stats']);
+    }
+  });
+
+  const deleteCourseMutation = useMutation({
+    mutationFn: (id) => api.delete(`/admin/courses/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-courses']);
+      queryClient.invalidateQueries(['admin-stats']);
+    }
+  });
+
+  const handleDeleteUser = (id) => {
+    if (window.confirm('Are you sure you want to delete this user? This will also delete their enrollments and progress.')) {
+      deleteUserMutation.mutate(id);
+    }
+  };
+
+  const handleDeleteCourse = (id) => {
+    if (window.confirm('Are you sure you want to delete this course? This will also delete all modules, lessons, and student progress.')) {
+      deleteCourseMutation.mutate(id);
+    }
+  };
+
   const { data: users } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
@@ -83,7 +113,15 @@ const AdminDashboard = () => {
                 </TableCell>
                 <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" color="error"><Trash2 size={18} /></IconButton>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleDeleteUser(user._id)}
+                    disabled={deleteUserMutation.isPending}
+                    title="Delete user"
+                  >
+                    <Trash2 size={18} />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -119,7 +157,15 @@ const AdminDashboard = () => {
                   <Chip label={course.status} size="small" variant="contained" color={course.status === 'published' ? 'success' : 'default'} />
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" color="error"><Trash2 size={18} /></IconButton>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleDeleteCourse(course._id)}
+                    disabled={deleteCourseMutation.isPending}
+                    title="Delete course"
+                  >
+                    <Trash2 size={18} />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
