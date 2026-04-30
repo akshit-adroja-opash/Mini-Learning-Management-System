@@ -1,89 +1,139 @@
-import { useState } from "react";
-import { submitQuiz } from "../api/quizApi.js";
-import toast from "react-hot-toast";
+import { useState } from 'react';
+import { Card, CardContent, Typography, Box, Radio, RadioGroup, FormControlLabel, Button, Alert, LinearProgress, Chip } from '@mui/material';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../services/api';
+import { CheckCircle2, XCircle } from 'lucide-react';
 
-export function QuizPanel({ quiz, onComplete }) {
+const QuizPanel = ({ moduleId, onComplete }) => {
+  const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [score, setScore] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState(null);
+  const queryClient = useQueryClient();
 
-  const handleOptionSelect = (questionId, optionId) => {
-    setAnswers({ ...answers, [questionId]: optionId });
-  };
-
-  const handleSubmit = async () => {
-    if (Object.keys(answers).length < quiz.questions.length) {
-      toast.error("Please answer all questions before submitting.");
-      return;
+  const { data: quiz, isLoading } = useQuery({
+    queryKey: ['quiz', moduleId],
+    queryFn: async () => {
+      const { data } = await api.get(`/quizzes/module/${moduleId}`);
+      return data;
     }
+  });
 
-    setSubmitting(true);
-    try {
-      const res = await submitQuiz(quiz._id, answers);
-      setScore(res.data.percentage);
-      if (onComplete) onComplete(res.data.passed, res.data.percentage);
-    } catch (err) {
-      toast.error("Failed to submit quiz.");
-    } finally {
-      setSubmitting(false);
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post(`/quizzes/${quiz._id}/submit`, { answers });
+      return data;
+    },
+    onSuccess: (data) => {
+      setResult(data);
+      if (data.passed) {
+        queryClient.invalidateQueries(['progress-all']);
+        if (onComplete) onComplete();
+      }
     }
-  };
+  });
 
-  if (score !== null) {
-    const passed = score >= quiz.passThreshold;
+  if (isLoading) return <LinearProgress />;
+  if (!quiz) return <Alert severity="info">No quiz available for this module.</Alert>;
+  if (!Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    return <Alert severity="warning">This quiz is not ready yet. Please contact the instructor.</Alert>;
+  }
+
+  if (result) {
     return (
-      <div className={`quiz-result ${passed ? "pass" : "fail"}`}>
-        <h3>{passed ? "🎉 Quiz Passed!" : "❌ Quiz Failed"}</h3>
-        <p className="score-text">Your Score: <strong>{score.toFixed(1)}%</strong></p>
-        <p>Pass Threshold: {quiz.passThreshold}%</p>
-        {!passed && <button className="retry-btn" onClick={() => setScore(null)}>Try Again</button>}
-      </div>
+      <Card className="glass-card" sx={{ textAlign: 'center', p: 4 }}>
+        <Box sx={{ mb: 3 }}>
+          {result.passed ? (
+            <CheckCircle2 size={64} color="#10b981" />
+          ) : (
+            <XCircle size={64} color="#ef4444" />
+          )}
+        </Box>
+        <Typography variant="h4" fontWeight={800} gutterBottom>
+          {result.passed ? 'Congratulations!' : 'Try Again'}
+        </Typography>
+        <Typography variant="h6" sx={{ mb: 4 }}>
+          Your Score: {result.score}% (Pass threshold: {quiz.passThreshold}%)
+        </Typography>
+        <Button 
+          variant="contained" 
+          className="premium-gradient"
+          onClick={() => { setResult(null); setCurrentStep(0); setAnswers({}); }}
+        >
+          {result.passed ? 'Review Results' : 'Retake Quiz'}
+        </Button>
+      </Card>
     );
   }
 
-  if (!quiz?.questions?.length) {
-    return <p className="error-message">Quiz is not ready yet.</p>;
+  const currentQuestion = quiz.questions[currentStep];
+  if (!currentQuestion?.prompt || !Array.isArray(currentQuestion.options) || currentQuestion.options.length < 2) {
+    return <Alert severity="warning">This quiz question is malformed and cannot be answered safely.</Alert>;
   }
 
   return (
-    <section className="quiz-panel">
-      <h2>{quiz.title}</h2>
-      <p className="quiz-meta">Answer all questions to pass. Pass threshold: {quiz.passThreshold}%</p>
+    <Card className="glass-card">
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="subtitle2" color="primary.main" fontWeight={700}>
+            Question {currentStep + 1} of {quiz.questions.length}
+          </Typography>
+          <Chip label={`${quiz.passThreshold}% to pass`} size="small" variant="outlined" />
+        </Box>
 
-      <div className="questions-container">
-        {quiz.questions.map((question, index) => (
-          <div key={question._id} className="question-item">
-            <p className="question-prompt">
-              <strong>Q{index + 1}:</strong> {question.prompt}
-            </p>
-            <div className="options-grid">
-              {question.options.map((option) => (
-                <label 
-                  key={option._id} 
-                  className={`option-label ${answers[question._id] === option._id ? "selected" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    name={question._id}
-                    value={option._id}
-                    checked={answers[question._id] === option._id}
-                    onChange={() => handleOptionSelect(question._id, option._id)}
-                  />
-                  {option.text}
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+        <Typography variant="h5" fontWeight={700} sx={{ mb: 4 }}>
+          {currentQuestion.prompt}
+        </Typography>
 
-      <button 
-        className="submit-quiz-btn" 
-        onClick={handleSubmit}
-        disabled={submitting}
-      >
-        {submitting ? "Submitting..." : "Submit Quiz"}
-      </button>
-    </section>
+        <RadioGroup
+          value={answers[currentQuestion._id] || ''}
+          onChange={(e) => setAnswers({ ...answers, [currentQuestion._id]: e.target.value })}
+        >
+          {currentQuestion.options.map((opt, idx) => (
+            <FormControlLabel
+              key={idx}
+              value={opt._id}
+              control={<Radio />}
+              label={opt.text}
+              sx={{ 
+                mb: 2, 
+                p: 2, 
+                borderRadius: 2, 
+                border: '1px solid rgba(255,255,255,0.05)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
+              }}
+            />
+          ))}
+        </RadioGroup>
+
+        <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
+          <Button 
+            disabled={currentStep === 0}
+            onClick={() => setCurrentStep(prev => prev - 1)}
+          >
+            Previous
+          </Button>
+          {currentStep < quiz.questions.length - 1 ? (
+            <Button 
+              variant="contained" 
+              onClick={() => setCurrentStep(prev => prev + 1)}
+              disabled={!answers[currentQuestion._id]}
+            >
+              Next Question
+            </Button>
+          ) : (
+            <Button 
+              variant="contained" 
+              className="premium-gradient"
+              onClick={() => submitMutation.mutate()}
+              disabled={submitMutation.isPending || !answers[currentQuestion._id]}
+            >
+              Submit Quiz
+            </Button>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default QuizPanel;

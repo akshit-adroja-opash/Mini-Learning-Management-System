@@ -20,6 +20,10 @@ const certificateSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    signature: {
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
       enum: ["active", "revoked"],

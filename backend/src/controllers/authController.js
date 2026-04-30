@@ -21,6 +21,7 @@ const toAuthUser = (user) => ({
 export const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    const requestedRole = ["learner", "instructor"].includes(role) ? role : "learner";
 
     if (!name || !email || !password) {
       return res.status(400).json({ msg: "Name, email, and password are required" });
@@ -35,7 +36,7 @@ export const register = async (req, res) => {
       name,
       email,
       passwordHash: hashed,
-      role
+      role: requestedRole
     });
 
     res.status(201).json({ token: generateToken(user), user: toAuthUser(user) });
@@ -48,12 +49,13 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return res.status(400).json({ msg: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
     const match = await bcrypt.compare(password, user.passwordHash);

@@ -43,7 +43,12 @@ MONGODB_URI=mongodb://127.0.0.1:27017/mini-lms
 JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
+
+Cloudinary is used for course thumbnails, promo videos, and lesson videos when the `CLOUDINARY_*` variables are set. If they are missing, uploads fall back to local `/uploads` storage for development.
 
 ### Step 3: Seed Database
 Populate the database with demo users and a sample course:
@@ -75,7 +80,33 @@ npm run dev
 | **Learner** | learner@lms.com | password123 |
 
 ## 🧪 API Testing
-A Postman collection is available in the `docs/` folder (or use the documented curl examples).
+
+Replace `TOKEN` and ids with values returned by your local server.
+
+```bash
+# Register / login
+curl -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" -d "{\"name\":\"Demo Learner\",\"email\":\"demo@lms.com\",\"password\":\"password123\",\"role\":\"learner\"}"
+curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"learner@lms.com\",\"password\":\"password123\"}"
+
+# Catalog and course detail with modules + progress
+curl http://localhost:3000/api/courses
+curl http://localhost:3000/api/courses/COURSE_ID -H "Authorization: Bearer TOKEN"
+
+# Enrollment lifecycle
+curl -X POST http://localhost:3000/api/enrollments/COURSE_ID -H "Authorization: Bearer TOKEN"
+curl http://localhost:3000/api/enrollments/me -H "Authorization: Bearer TOKEN"
+curl -X DELETE http://localhost:3000/api/enrollments/COURSE_ID -H "Authorization: Bearer TOKEN"
+
+# Video progress, resume, quiz, certificate
+curl -X POST http://localhost:3000/api/progress -H "Authorization: Bearer TOKEN" -H "Content-Type: application/json" -d "{\"lesson\":\"LESSON_ID\",\"watchedSeconds\":270,\"lastPositionSeconds\":270,\"totalDuration\":300}"
+curl http://localhost:3000/api/progress/course/COURSE_ID/lesson/LESSON_ID -H "Authorization: Bearer TOKEN"
+curl http://localhost:3000/api/quizzes/module/MODULE_ID -H "Authorization: Bearer TOKEN"
+curl -X POST http://localhost:3000/api/quizzes/QUIZ_ID/submit -H "Authorization: Bearer TOKEN" -H "Content-Type: application/json" -d "{\"answers\":{\"QUESTION_ID\":\"OPTION_ID\"}}"
+curl -X POST http://localhost:3000/api/certificates/COURSE_ID -H "Authorization: Bearer TOKEN"
+curl http://localhost:3000/verify/CERT_ID
+```
+
+Protected learner routes return `401` without a token and `403` when the wrong role attempts learner-only actions. Instructor/admin endpoints are guarded by role middleware.
 
 ## 📄 License
 MIT

@@ -35,10 +35,11 @@ router.get("/module/:moduleId", protect, asyncHandler(async (req, res) => {
 // Learner Routes
 router.get("/:id", protect, asyncHandler(async (req, res) => {
   const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) return res.status(404).json({ msg: "Quiz not found" });
   const questions = await Question.find({ quiz: req.params.id });
   res.json({ ...quiz.toObject(), questions });
 }));
 
-router.post("/:id/submit", protect, asyncHandler(submitQuiz));
+router.post("/:id/submit", protect, authorize("learner"), asyncHandler(submitQuiz));
 
 export default router;

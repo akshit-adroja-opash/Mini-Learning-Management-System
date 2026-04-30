@@ -48,6 +48,11 @@ const enrollmentSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    lastAccessedLesson: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lesson",
+      default: null,
+    },
   },
   { timestamps: true }
 );

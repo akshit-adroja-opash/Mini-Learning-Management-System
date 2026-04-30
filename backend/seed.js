@@ -6,6 +6,10 @@ import Module from "./src/models/Module.js";
 import Lesson from "./src/models/Lesson.js";
 import Quiz from "./src/models/Quiz.js";
 import Question from "./src/models/Question.js";
+import Enrollment from "./src/models/Enrollment.js";
+import LessonProgress from "./src/models/LessonProgress.js";
+import QuizAttempt from "./src/models/QuizAttempt.js";
+import Certificate from "./src/models/Certificate.js";
 
 import bcrypt from "bcryptjs";
 import { dirname, resolve } from "node:path";
@@ -26,14 +30,19 @@ const seed = async () => {
     await Lesson.deleteMany();
     await Quiz.deleteMany();
     await Question.deleteMany();
+    await Enrollment.deleteMany();
+    await LessonProgress.deleteMany();
+    await QuizAttempt.deleteMany();
+    await Certificate.deleteMany();
 
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const adminPasswordHash = await bcrypt.hash("admin123", 10);
+    const demoPasswordHash = await bcrypt.hash("password123", 10);
 
     // Create Admin
     const admin = await User.create({
       name: "System Admin",
       email: "admin@lms.com",
-      passwordHash: hashedPassword,
+      passwordHash: adminPasswordHash,
       role: "admin"
     });
 
@@ -41,7 +50,7 @@ const seed = async () => {
     const instructor = await User.create({
       name: "John Instructor",
       email: "instructor@lms.com",
-      passwordHash: hashedPassword,
+      passwordHash: demoPasswordHash,
       role: "instructor"
     });
 
@@ -49,7 +58,7 @@ const seed = async () => {
     const learner = await User.create({
       name: "Jane Student",
       email: "learner@lms.com",
-      passwordHash: hashedPassword,
+      passwordHash: demoPasswordHash,
       role: "learner"
     });
 
@@ -64,7 +73,6 @@ const seed = async () => {
       status: "published"
     });
 
-    // Create Module 1
     const module1 = await Module.create({
       course: course._id,
       title: "Introduction to React",
@@ -72,7 +80,6 @@ const seed = async () => {
       isPublished: true
     });
 
-    // Create Lesson 1
     await Lesson.create({
       course: course._id,
       module: module1._id,
@@ -80,18 +87,47 @@ const seed = async () => {
       videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       durationSeconds: 300,
       order: 1,
+      isPublished: true,
+      readingMaterials: [{ title: "React documentation", url: "https://react.dev/learn" }]
+    });
+
+    await Lesson.create({
+      course: course._id,
+      module: module1._id,
+      title: "Components and Props",
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      durationSeconds: 420,
+      order: 2,
+      isPublished: true,
+      readingMaterials: [{ title: "Passing props", url: "https://react.dev/learn/passing-props-to-a-component" }]
+    });
+
+    const module2 = await Module.create({
+      course: course._id,
+      title: "Express APIs",
+      order: 2,
       isPublished: true
     });
 
-    // Create Quiz for Module 1
+    await Lesson.create({
+      course: course._id,
+      module: module2._id,
+      title: "Building REST Routes",
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      durationSeconds: 360,
+      order: 1,
+      isPublished: true,
+      readingMaterials: [{ title: "Express routing guide", url: "https://expressjs.com/en/guide/routing.html" }]
+    });
+
     const quiz1 = await Quiz.create({
       course: course._id,
       module: module1._id,
       title: "React Basics Quiz",
-      passThreshold: 70
+      passThreshold: 70,
+      isPublished: true
     });
 
-    // Create Questions for Quiz 1
     await Question.create({
       quiz: quiz1._id,
       prompt: "React is a framework of which language?",
@@ -103,7 +139,27 @@ const seed = async () => {
       order: 1
     });
 
+    const quiz2 = await Quiz.create({
+      course: course._id,
+      module: module2._id,
+      title: "Express Basics Quiz",
+      passThreshold: 70,
+      isPublished: true
+    });
+
+    await Question.create({
+      quiz: quiz2._id,
+      prompt: "Which HTTP method is commonly used to create a resource?",
+      options: [
+        { text: "GET", isCorrect: false },
+        { text: "POST", isCorrect: true },
+        { text: "OPTIONS", isCorrect: false }
+      ],
+      order: 1
+    });
+
     console.log("Seeding completed successfully!");
+    console.log("Demo accounts: admin@lms.com / admin123, instructor@lms.com and learner@lms.com / password123");
     process.exit();
   } catch (err) {
     console.error("Seeding failed:", err);

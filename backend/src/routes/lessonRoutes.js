@@ -6,7 +6,12 @@ import asyncHandler from "../middleware/asyncHandler.js";
 const router = express.Router();
 
 router.post("/", protect, authorize("instructor"), asyncHandler(async (req, res) => {
-  const { module: moduleId } = req.body;
+  const { module: moduleId, duration, durationSeconds } = req.body;
+  
+  if (duration && !durationSeconds) {
+    req.body.durationSeconds = duration;
+  }
+
   if (!req.body.order) {
     const count = await Lesson.countDocuments({ module: moduleId });
     req.body.order = count + 1;
@@ -26,6 +31,12 @@ router.get("/:id", asyncHandler(async (req, res) => {
 }));
 
 router.put("/:id", protect, authorize("instructor"), asyncHandler(async (req, res) => {
+  const { duration, durationSeconds } = req.body;
+
+  if (duration && !durationSeconds) {
+    req.body.durationSeconds = duration;
+  }
+
   const lesson = await Lesson.findByIdAndUpdate(req.params.id, req.body, { new: true });
   res.json(lesson);
 }));

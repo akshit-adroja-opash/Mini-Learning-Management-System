@@ -56,7 +56,11 @@ export const deleteCourse = async (req, res) => {
   if (!course) {
     return res.status(404).json({ message: "Course not found" });
   }
-  res.json({ message: "Course deleted" });
+
+  // Delete all enrollments associated with this course to prevent orphan records
+  await Enrollment.deleteMany({ course: req.params.id });
+
+  res.json({ message: "Course deleted and enrollments cleaned up" });
 };
 
 export const getAdminAnalytics = async (req, res) => {
