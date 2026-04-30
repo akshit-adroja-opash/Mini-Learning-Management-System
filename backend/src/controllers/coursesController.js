@@ -197,4 +197,69 @@ export const getInstructorCourses = async (req, res) => {
   const courses = await Course.find({ instructor: req.user._id });
 
   res.json(courses);
-}
+};
+
+export const updateCourse = async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ msg: 'Invalid Course ID' });
+  }
+
+  const course = await Course.findById(req.params.id);
+  if (!course) return res.status(404).json({ msg: 'Course not found' });
+
+  // Only the instructor who owns it or an admin can update
+  if (course.instructor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Not authorized to update this course' });
+  }
+
+  const allowedFields = ['title', 'description', 'category', 'level', 'thumbnailUrl', 'promoVideoUrl', 'status', 'price'];
+  allowedFields.forEach((field) => {
+    if (req.body[field] !== undefined) course[field] = req.body[field];
+  });
+
+  // Regenerate slug if title changed
+  if (req.body.title) {
+    course.slug = req.body.title.toLowerCase().split(' ').join('-') + '-' + Date.now();
+  }
+
+  await course.save();
+  res.json(course);
+};
+
+export const deleteCourse = async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ msg: 'Invalid Course ID' });
+  }
+
+  const course = await Course.findById(req.params.id);
+  if (!course) return res.status(404).json({ msg: 'Course not found' });
+
+  // Only the instructor who owns it or an admin can delete
+  if (course.instructor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    return res.status(403).json({ msg: 'Not authorized to delete this course' });
+  }
+
+  const Module = mongoose.model('Module');
+  const Lesson = mongoose.model('Lesson');
+  const Enrollment = mongoose.model('Enrollment');
+
+  // Cascade: get all module IDs
+  const modules = await Module.find({ course: course._id }).select('_id');
+  const moduleIds = modules.map((m) => m._id);
+
+  // Delete all lessons in those modules
+  if (moduleIds.length) {
+    await Lesson.deleteMany({ module: { $in: moduleIds } });
+  }
+
+  // Delete all modules
+  await Module.deleteMany({ course: course._id });
+
+  // Delete all enrollments
+  await Enrollment.deleteMany({ course: course._id });
+
+  // Delete the course itself
+  await Course.findByIdAndDelete(course._id);
+
+  res.json({ msg: 'Course and all related data deleted successfully' });
+};

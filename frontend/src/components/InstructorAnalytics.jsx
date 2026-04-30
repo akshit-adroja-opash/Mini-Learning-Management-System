@@ -1,9 +1,11 @@
-import { Box, Typography, Grid, Card, CardContent, LinearProgress, Paper } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, LinearProgress, Paper, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { Users, TrendingUp, Award, Clock } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const InstructorAnalytics = () => {
+  const theme = useTheme();
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['instructor-analytics'],
     queryFn: async () => {
@@ -41,6 +43,36 @@ const InstructorAnalytics = () => {
           </Grid>
         ))}
       </Grid>
+ 
+      <Paper className="glass-card" sx={{ p: 4, mb: 6, bgcolor: 'rgba(255,255,255,0.02)' }}>
+        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 4 }}>Enrollment Trends (Last 30 Days)</Typography>
+        <Box sx={{ height: 300, width: '100%' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={analytics?.trends || []}>
+              <defs>
+                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }} 
+                minTickGap={30}
+              />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                itemStyle={{ color: '#fff' }}
+              />
+              <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Box>
+      </Paper>
 
       <Typography variant="h6" fontWeight={700} gutterBottom>Course Performance</Typography>
       <Grid container spacing={4}>

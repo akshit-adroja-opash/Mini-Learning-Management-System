@@ -73,39 +73,6 @@ const seed = async () => {
       status: "published"
     });
 
-    const module1 = await Module.create({
-      course: course._id,
-      title: "Introduction to React",
-      order: 1,
-      isPublished: true
-    });
-
-    await Lesson.create({
-      course: course._id,
-      module: module1._id,
-      title: "What is React?",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      durationSeconds: 300,
-      order: 1,
-      isPublished: true,
-      readingMaterials: [{ title: "React documentation", url: "https://react.dev/learn" }]
-    });
-
-    await Lesson.create({
-      course: course._id,
-      module: module1._id,
-      title: "Components and Props",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      durationSeconds: 420,
-      order: 2,
-      isPublished: true,
-      readingMaterials: [{ title: "Passing props", url: "https://react.dev/learn/passing-props-to-a-component" }]
-    });
-
-    const module2 = await Module.create({
-      course: course._id,
-      title: "Express APIs",
-      order: 2,
       isPublished: true
     });
 

@@ -11,6 +11,7 @@ const CourseManagement = () => {
   const [openModuleDialog, setOpenModuleDialog] = useState(false);
   const [openLessonDialog, setOpenLessonDialog] = useState(false);
   const [currentModuleId, setCurrentModuleId] = useState(null);
+  const [editingModuleId, setEditingModuleId] = useState(null);
 
   const [moduleData, setModuleData] = useState({ title: '', order: 1 });
   const [lessonData, setLessonData] = useState({ title: '', content: '', videoUrl: '', durationSeconds: 5, order: 1 });
@@ -31,6 +32,23 @@ const CourseManagement = () => {
       queryClient.invalidateQueries(['course-manage', id]);
       setOpenModuleDialog(false);
       setModuleData({ title: '', order: (course.modules?.length || 0) + 1 });
+    }
+  });
+
+  const updateModuleMutation = useMutation({
+    mutationFn: ({ id, data }) => api.put(`/modules/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['course-manage', id]);
+      setOpenModuleDialog(false);
+      setEditingModuleId(null);
+      setModuleData({ title: '', order: 1 });
+    }
+  });
+
+  const deleteModuleMutation = useMutation({
+    mutationFn: (moduleId) => api.delete(`/modules/${moduleId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['course-manage', id]);
     }
   });
 
@@ -75,6 +93,7 @@ const CourseManagement = () => {
           <Typography variant="body1" color="text.secondary">Manage modules and lessons for this course.</Typography>
         </Box>
         <Button variant="contained" className="premium-gradient" startIcon={<Plus />} onClick={() => {
+          setEditingModuleId(null);
           setModuleData({ title: '', order: (course.modules?.length || 0) + 1 });
           setOpenModuleDialog(true);
         }}>
@@ -98,7 +117,20 @@ const CourseManagement = () => {
                   }}>
                     Add Lesson
                   </Button>
-                  <IconButton size="small" color="error"><Trash2 size={18} /></IconButton>
+                  <IconButton size="small" onClick={() => {
+                    setEditingModuleId(module._id);
+                    setModuleData({ title: module.title, order: module.order || 1 });
+                    setOpenModuleDialog(true);
+                  }}>
+                    <Edit2 size={18} />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this module and all its lessons?')) {
+                      deleteModuleMutation.mutate(module._id);
+                    }
+                  }}>
+                    <Trash2 size={18} />
+                  </IconButton>
                 </Box>
               </Box>
               <Divider sx={{ opacity: 0.1 }} />
@@ -141,14 +173,25 @@ const CourseManagement = () => {
 
       {/* Module Dialog */}
       <Dialog open={openModuleDialog} onClose={() => setOpenModuleDialog(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: 'glass-card', sx: { bgcolor: '#1e293b' } } }}>
-        <DialogTitle fontWeight={800}>Create New Module</DialogTitle>
+        <DialogTitle fontWeight={800}>{editingModuleId ? 'Edit Module' : 'Create New Module'}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField fullWidth label="Module Title" value={moduleData.title} onChange={(e) => setModuleData({ ...moduleData, title: e.target.value })} />
             <TextField fullWidth type="number" label="Display Order" value={moduleData.order} onChange={(e) => setModuleData({ ...moduleData, order: e.target.value })} />
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-              <Button onClick={() => setOpenModuleDialog(false)}>Cancel</Button>
-              <Button variant="contained" className="premium-gradient" onClick={() => addModuleMutation.mutate(moduleData)}>Create Module</Button>
+              <Button onClick={() => {
+                setOpenModuleDialog(false);
+                setEditingModuleId(null);
+              }}>Cancel</Button>
+              <Button variant="contained" className="premium-gradient" onClick={() => {
+                if (editingModuleId) {
+                  updateModuleMutation.mutate({ id: editingModuleId, data: moduleData });
+                } else {
+                  addModuleMutation.mutate(moduleData);
+                }
+              }}>
+                {editingModuleId ? 'Save Changes' : 'Create Module'}
+              </Button>
             </Box>
           </Box>
         </DialogContent>

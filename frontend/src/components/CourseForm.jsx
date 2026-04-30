@@ -4,56 +4,61 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { Save, X, FileVideo, CheckCircle, ImagePlus } from 'lucide-react';
 
-const CourseForm = ({ onCancel, onSuccess }) => {
+const CourseForm = ({ onCancel, onSuccess, course }) => {
+  const isEdit = Boolean(course?._id);
+
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    level: 'beginner',
-    thumbnailUrl: '',
-    promoVideoUrl: ''
+    title: course?.title || '',
+    description: course?.description || '',
+    category: course?.category || '',
+    level: course?.level || 'beginner',
+    thumbnailUrl: course?.thumbnailUrl || '',
+    promoVideoUrl: course?.promoVideoUrl || ''
   });
   const [uploading, setUploading] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState('');
-  const [uploadedThumbnailUrl, setUploadedThumbnailUrl] = useState('');
+  const [uploadedUrl, setUploadedUrl] = useState(course?.promoVideoUrl || '');
+  const [uploadedThumbnailUrl, setUploadedThumbnailUrl] = useState(course?.thumbnailUrl || '');
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (data) => {
-      const response = await api.post('/courses', data);
-      return response.data;
+      if (isEdit) {
+        const response = await api.put(`/courses/${course._id}`, data);
+        return response.data;
+      } else {
+        const response = await api.post('/courses', data);
+        return response.data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['instructor-courses']);
+      queryClient.invalidateQueries(['course-manage', course?._id]);
       if (onSuccess) onSuccess();
     },
     onError: (err) => {
-      setError(err.response?.data?.message || 'Failed to create course');
+      setError(err.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} course`);
     }
   });
 
   const uploadMedia = async (file) => {
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
-
     const { data } = await api.post('/upload', formDataUpload, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-
     return data;
   };
 
   const handleThumbnailUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setThumbnailUploading(true);
     try {
       const data = await uploadMedia(file);
       setUploadedThumbnailUrl(data.url);
-      setFormData({ ...formData, thumbnailUrl: data.url });
+      setFormData((prev) => ({ ...prev, thumbnailUrl: data.url }));
     } catch {
       setError('Thumbnail upload failed');
     } finally {
@@ -64,12 +69,11 @@ const CourseForm = ({ onCancel, onSuccess }) => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const data = await uploadMedia(file);
       setUploadedUrl(data.url);
-      setFormData({ ...formData, promoVideoUrl: data.url });
+      setFormData((prev) => ({ ...prev, promoVideoUrl: data.url }));
     } catch {
       setError('File upload failed');
     } finally {
@@ -85,7 +89,7 @@ const CourseForm = ({ onCancel, onSuccess }) => {
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ p: 1 }}>
       <Typography variant="h5" fontWeight={800} gutterBottom sx={{ mb: 4 }}>
-        Create New Course
+        {isEdit ? 'Edit Course' : 'Create New Course'}
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
@@ -182,9 +186,9 @@ const CourseForm = ({ onCancel, onSuccess }) => {
               onChange={handleFileUpload}
             />
             <label htmlFor="video-upload">
-              <Button 
-                variant="outlined" 
-                component="span" 
+              <Button
+                variant="outlined"
+                component="span"
                 startIcon={uploading ? <CircularProgress size={20} /> : <FileVideo size={20} />}
                 disabled={uploading}
                 sx={{ px: 4, py: 1.5 }}
@@ -205,14 +209,14 @@ const CourseForm = ({ onCancel, onSuccess }) => {
         <Button variant="outlined" onClick={onCancel} startIcon={<X size={18} />}>
           Cancel
         </Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
-          className="premium-gradient" 
+        <Button
+          type="submit"
+          variant="contained"
+          className="premium-gradient"
           startIcon={mutation.isPending ? <CircularProgress size={20} color="inherit" /> : <Save size={18} />}
           disabled={mutation.isPending}
         >
-          Create Course
+          {isEdit ? 'Save Changes' : 'Create Course'}
         </Button>
       </Box>
     </Box>
