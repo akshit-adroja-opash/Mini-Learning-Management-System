@@ -1,6 +1,7 @@
 import { enroll, unenroll, getMyEnrollments, getEnrollmentByCourse } from "../controllers/enrollmentsController.js";
 import asyncHandler from "../middleware/asyncHandler.js";
-import { protect, authorize } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
 import express from "express";
 
 const router = express.Router();

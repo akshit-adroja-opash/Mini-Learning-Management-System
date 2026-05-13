@@ -13,8 +13,12 @@ import Discussion from "../models/Discussion.js";
 export const getUsers = async (req, res) => {
   const { search = "", page = 1, limit = 10 } = req.query;
 
+  const regex = { $regex: search, $options: "i" };
   const query = {
-    email: { $regex: search, $options: "i" }
+    $or: [
+      { email: regex },
+      { name: regex }
+    ]
   };
 
   const users = await User.find(query)
@@ -54,10 +58,10 @@ export const deleteUser = async (req, res) => {
   }
 
   // Cleanup user-related data
-  await Enrollment.deleteMany({ user: userId });
-  await LessonProgress.deleteMany({ user: userId });
-  await QuizAttempt.deleteMany({ user: userId });
-  await Certificate.deleteMany({ user: userId });
+  await Enrollment.deleteMany({ learner: userId });
+  await LessonProgress.deleteMany({ learner: userId });
+  await QuizAttempt.deleteMany({ learner: userId });
+  await Certificate.deleteMany({ learner: userId });
   await Discussion.deleteMany({ author: userId });
 
   await User.findByIdAndDelete(userId);

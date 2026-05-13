@@ -48,7 +48,7 @@ const useProgress = (courseId, lessonId) => {
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      persistProgress(watchedRef.current, lastPositionRef.current, durationRef.current).catch(() => {});
+      persistProgress(watchedRef.current, lastPositionRef.current, durationRef.current).catch(() => { });
     };
   }, [persistProgress]);
 

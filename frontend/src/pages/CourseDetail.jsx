@@ -20,11 +20,7 @@ const CourseDetail = () => {
     queryKey: ['enrollment', id],
     queryFn: async () => {
       if (!user) return null;
-      try {
-        return getData(`/enrollments/course/${id}`);
-      } catch {
-        return null;
-      }
+      return getData(`/enrollments/course/${id}`);
     },
     enabled: !!user,
   });
@@ -33,7 +29,11 @@ const CourseDetail = () => {
     mutationFn: () => postData(`/enrollments/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['enrollment', id]);
-      navigate(`/learning/${id}/${course.modules[0].lessons[0]._id}`);
+      // Navigate to first lesson with null checks
+      const firstModule = course?.modules?.find(m => m.lessons?.length > 0);
+      const firstLesson = firstModule?.lessons?.[0]?._id;
+      const targetLessonId = firstLesson || 'main';
+      navigate(`/learning/${id}/${targetLessonId}`);
     },
   });
 
@@ -130,7 +130,14 @@ const CourseDetail = () => {
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>This course includes:</Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
-                    <Play size={16} /> <Typography variant="body2">10 hours of video lessons</Typography>
+                    <Play size={16} /> <Typography variant="body2">{(() => {
+                      const totalSeconds = (course?.modules || []).reduce((sum, mod) => {
+                        return sum + (mod.lessons || []).reduce((lessonSum, lesson) => lessonSum + (lesson.durationSeconds || 0), 0);
+                      }, 0);
+                      const hours = Math.round(totalSeconds / 3600);
+                      const minutes = Math.round((totalSeconds % 3600) / 60);
+                      return hours > 0 ? `${hours}h ${minutes}m of video lessons` : `${minutes} min of video lessons`;
+                    })()}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary' }}>
                     <CheckCircle size={16} /> <Typography variant="body2">Hands-on quizzes</Typography>

@@ -34,6 +34,14 @@ const LearningPage = () => {
     }
   });
 
+  const { data: quizStatus } = useQuery({
+    queryKey: ['quiz-statuses', courseId],
+    queryFn: async () => {
+      const { data } = await api.get(`/quizzes/course/${courseId}/status`);
+      return data;
+    }
+  });
+
   const { resumeSeconds, setTotalDuration, saveProgress } = useProgress(courseId, lessonId);
   const [videoError, setVideoError] = useState({ lessonId: null, message: '' });
   const [showQuiz, setShowQuiz] = useState(false);
@@ -113,8 +121,6 @@ const LearningPage = () => {
                         ? videoUrl
                         : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${videoUrl.startsWith('/') ? '' : '/'}${videoUrl}`)
                       : null;
-
-                    console.log('DEBUG: Resolved Video URL:', resolvedUrl);
 
                     if (!resolvedUrl) return (
                       <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
@@ -212,8 +218,59 @@ const LearningPage = () => {
                     <Typography variant="body2" color="text.secondary">{course.title}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button variant="outlined" startIcon={<ChevronLeft />}>Prev</Button>
-                    <Button variant="contained" className="premium-gradient" endIcon={<ChevronRight />}>Next Lesson</Button>
+                    <Button 
+                      variant="outlined" 
+                      startIcon={<ChevronLeft />}
+                      onClick={() => {
+                        // Find current lesson in modules and navigate to previous
+                        let prevLesson = null;
+                        for (let i = 0; i < (course.modules || []).length; i++) {
+                          const mod = course.modules[i];
+                          const lessonIdx = (mod.lessons || []).findIndex(l => l._id.toString() === lessonId.toString());
+                          if (lessonIdx !== -1 && lessonIdx > 0) {
+                            prevLesson = mod.lessons[lessonIdx - 1]._id;
+                            break;
+                          }
+                          if (lessonIdx !== -1) {
+                            if (i > 0) {
+                              const prevMod = course.modules[i - 1];
+                              prevLesson = prevMod.lessons?.[prevMod.lessons.length - 1]?._id;
+                            }
+                            break;
+                          }
+                        }
+                        if (prevLesson) navigate(`/learning/${courseId}/${prevLesson}`);
+                      }}
+                    >
+                      Prev
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      className="premium-gradient" 
+                      endIcon={<ChevronRight />}
+                      onClick={() => {
+                        // Find current lesson in modules and navigate to next
+                        let nextLesson = null;
+                        for (let i = 0; i < (course.modules || []).length; i++) {
+                          const mod = course.modules[i];
+                          const lessonIdx = (mod.lessons || []).findIndex(l => l._id.toString() === lessonId.toString());
+                          if (lessonIdx !== -1 && lessonIdx < (mod.lessons || []).length - 1) {
+                            nextLesson = mod.lessons[lessonIdx + 1]._id;
+                            break;
+                          }
+                          if (lessonIdx !== -1) {
+                            if (i < (course.modules || []).length - 1) {
+                              const nextMod = course.modules[i + 1];
+                              nextLesson = nextMod.lessons?.[0]?._id;
+                            }
+                            break;
+                          }
+                        }
+                        if (nextLesson) navigate(`/learning/${courseId}/${nextLesson}`);
+                      }}
+                    >
+                      Next Lesson
+                    </Button>
                   </Box>
                 </Box>
 
@@ -244,17 +301,11 @@ const LearningPage = () => {
               <Box sx={{ p: 3, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <Typography variant="h6" fontWeight={800} gutterBottom>Course Content</Typography>
                 <Box sx={{ mt: 2 }}>
-                  {(() => {
-                    return (
-                      <>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="caption" color="text.secondary">Overall Progress</Typography>
-                          <Typography variant="caption" fontWeight={700}>{overallProgress}%</Typography>
-                        </Box>
-                        <LinearProgress variant="determinate" value={overallProgress} sx={{ borderRadius: 5, height: 6 }} />
-                      </>
-                    );
-                  })()}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Overall Progress</Typography>
+                    <Typography variant="caption" fontWeight={700}>{overallProgress}%</Typography>
+                  </Box>
+                  <LinearProgress variant="determinate" value={overallProgress} sx={{ borderRadius: 5, height: 6 }} />
                 </Box>
               </Box>
 
@@ -307,12 +358,16 @@ const LearningPage = () => {
                           selected={showQuiz && activeModule === module._id}
                         >
                           <ListItemIcon sx={{ minWidth: 40 }}>
-                            <HelpCircle size={20} color="#ec4899" />
+                            {quizStatus?.passedModules?.[module._id] ? (
+                              <CheckCircle2 size={20} color="#10b981" />
+                            ) : (
+                              <HelpCircle size={20} color="#ec4899" />
+                            )}
                           </ListItemIcon>
                           <ListItemText
                             primary={
                               <Typography variant="body2" fontWeight={700}>
-                                Module Quiz
+                                {quizStatus?.passedModules?.[module._id] ? 'Quiz Complete' : 'Module Quiz'}
                               </Typography>
                             }
                           />

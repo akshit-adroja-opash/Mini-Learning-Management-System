@@ -6,7 +6,8 @@ import {
   verifyCertificate,
 } from "../controllers/certificatesController.js";
 import asyncHandler from "../middleware/asyncHandler.js";
-import { authorize, protect } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 

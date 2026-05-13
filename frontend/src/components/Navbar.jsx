@@ -2,7 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Container, Box, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, LogOut, User, LayoutDashboard, BookOpen, ShieldCheck } from 'lucide-react';
+import { GraduationCap, LogOut, User, BookOpen, ShieldCheck } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -55,9 +55,6 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Button component={Link} to="/dashboard" color="inherit" startIcon={<LayoutDashboard size={18} />}>
-                  Dashboard
-                </Button>
                 {user.role === 'admin' && (
                   <Button component={Link} to="/admin" color="inherit" startIcon={<ShieldCheck size={18} />}>
                     Admin

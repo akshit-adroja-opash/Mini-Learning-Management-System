@@ -95,7 +95,7 @@ const circle = (cx, cy, radius, fill, stroke = null, strokeWidth = 1) => {
     return commands.filter(Boolean).join("\n");
 };
 
-const buildCertificatePdf = ({ certId, learnerName, courseTitle, issuedAt, verifyUrl }) => {
+const buildCertificatePdf = ({ certId, learnerName, courseTitle, issuedAt }) => {
     const issuedDate = new Date(issuedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
@@ -109,10 +109,10 @@ const buildCertificatePdf = ({ certId, learnerName, courseTitle, issuedAt, verif
         rect(0, 0, pageWidth, pageHeight, "#f8fafc"),
         rect(24, 24, 744, 564, null, "#7c3aed", 3),
         rect(36, 36, 720, 540, null, "#d946ef", 1),
-        rect(48, 520, 696, 4, "#7c3aed"),
-        rect(48, 512, 696, 2, "#d946ef"),
-        rect(48, 88, 696, 2, "#d946ef"),
-        rect(48, 80, 696, 4, "#7c3aed"),
+        rect(48, 505, 696, 4, "#7c3aed"),
+        rect(48, 497, 696, 2, "#d946ef"),
+        rect(48, 68, 696, 2, "#d946ef"),
+        rect(48, 60, 696, 4, "#7c3aed"),
 
         circle(96, 532, 26, "#7c3aed"),
         "q 1 1 1 rg 81 535 m 96 542 l 111 535 l 96 528 l h f Q",
@@ -122,8 +122,8 @@ const buildCertificatePdf = ({ certId, learnerName, courseTitle, issuedAt, verif
         line(84, 523, 108, 523, "#ffffff", 1.5),
         text("LMS", 132, 539, 20, "F2", "#111827"),
         text("Pro", 178, 539, 20, "F2", "#6366f1"),
-        text("Verified Digital Certificate", 660, 541, 12, "F2", "#6366f1", { align: "right" }),
-        text(`ID: ${certId}`, 660, 522, 8, "F1", "#64748b", { align: "right", maxWidth: 260 }),
+        text("Verified Certificate", 660, 541, 13, "F2", "#6366f1", { align: "right" }),
+        text("LMS Pro Learning", 660, 521, 10, "F1", "#64748b", { align: "right" }),
 
         text("Certificate of Completion", centerX, 445, 38, "F2", "#111827", { align: "center" }),
         line(276, 427, 516, 427, "#d946ef", 1.5),
@@ -133,22 +133,20 @@ const buildCertificatePdf = ({ certId, learnerName, courseTitle, issuedAt, verif
         text("for successfully completing the course", centerX, 292, 14, "F1", "#64748b", { align: "center" }),
         text(courseTitle, centerX, 252, 24, "F2", "#4f46e5", { align: "center", maxWidth: 610 }),
 
-        rect(112, 158, 568, 54, "#eef2ff", "#c7d2fe", 1),
-        text(`Issued on ${issuedDate}`, 138, 190, 12, "F2", "#334155"),
-        text("Issuer: LMS Pro Learning", 138, 171, 11, "F1", "#475569"),
-        text("Status: Verified", 654, 190, 12, "F2", "#16a34a", { align: "right" }),
-        text("Certificate of achievement", 654, 171, 11, "F1", "#475569", { align: "right" }),
+        rect(102, 150, 588, 72, "#eef2ff", "#c7d2fe", 1),
+        text(`Issued on ${issuedDate}`, 128, 196, 12, "F2", "#334155"),
+        text("Issuer: LMS Pro Learning", 128, 176, 11, "F1", "#475569"),
+        text(`Certificate ID: ${certId}`, 128, 158, 9, "F1", "#64748b", { maxWidth: 330 }),
+        text("Status: Verified", 666, 196, 12, "F2", "#16a34a", { align: "right" }),
+        text("Certificate of Completion", 666, 176, 11, "F1", "#475569", { align: "right" }),
 
         line(102, 118, 284, 118, "#94a3b8", 1),
-        text("LMS Pro Learning", 193, 99, 11, "F2", "#111827", { align: "center" }),
-        text("Authorized Issuer", 193, 83, 9, "F1", "#64748b", { align: "center" }),
-        circle(594, 112, 42, "#ffffff", "#7c3aed", 2),
-        circle(594, 112, 32, null, "#d946ef", 1),
-        text("LMS", 594, 118, 15, "F2", "#7c3aed", { align: "center" }),
-        text("PRO", 594, 100, 10, "F2", "#d946ef", { align: "center" }),
-
-        text("Verify this certificate online:", centerX, 60, 8, "F1", "#64748b", { align: "center" }),
-        text(verifyUrl, centerX, 46, 8, "F1", "#334155", { align: "center", maxWidth: 650, maxLength: 240 }),
+        text("LMS Pro Learning", 193, 98, 11, "F2", "#111827", { align: "center" }),
+        text("Authorized Issuer", 193, 82, 9, "F1", "#64748b", { align: "center" }),
+        circle(594, 114, 42, "#ffffff", "#7c3aed", 2),
+        circle(594, 114, 32, null, "#d946ef", 1),
+        text("LMS", 594, 120, 15, "F2", "#7c3aed", { align: "center" }),
+        text("PRO", 594, 102, 10, "F2", "#d946ef", { align: "center" }),
     ].join("\n");
 
     const objects = [
@@ -303,13 +301,11 @@ export const downloadCertificatePdf = async (req, res) => {
         return res.status(400).json({ msg: 'Certificate signature is invalid' });
     }
 
-    const verifyUrl = `${req.protocol}://${req.get('host')}/verify/${cert.certificateId}`;
     const pdf = buildCertificatePdf({
         certId: cert.certificateId,
         learnerName: cert.learner.name,
         courseTitle: cert.course.title,
         issuedAt: cert.issuedAt,
-        verifyUrl,
     });
 
     res.setHeader("Content-Type", "application/pdf");

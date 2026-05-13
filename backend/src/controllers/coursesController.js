@@ -245,24 +245,32 @@ export const deleteCourse = async (req, res) => {
   const Module = mongoose.model('Module');
   const Lesson = mongoose.model('Lesson');
   const Enrollment = mongoose.model('Enrollment');
+  const Quiz = mongoose.model('Quiz');
+  const Question = mongoose.model('Question');
+  const QuizAttempt = mongoose.model('QuizAttempt');
+  const LessonProgress = mongoose.model('LessonProgress');
+  const Certificate = mongoose.model('Certificate');
+  const Discussion = mongoose.model('Discussion');
 
-  // Cascade: get all module IDs
-  const modules = await Module.find({ course: course._id }).select('_id');
-  const moduleIds = modules.map((m) => m._id);
+  // Find related IDs for cascade
+  const quizzes = await Quiz.find({ course: course._id });
+  const quizIds = quizzes.map((q) => q._id);
+  const lessonIds = await Lesson.find({ course: course._id }).distinct('_id');
 
-  // Delete all lessons in those modules
-  if (moduleIds.length) {
-    await Lesson.deleteMany({ module: { $in: moduleIds } });
-  }
-
-  // Delete all modules
+  // Cascade delete all related data
+  await Question.deleteMany({ quiz: { $in: quizIds } });
+  await QuizAttempt.deleteMany({ quiz: { $in: quizIds } });
+  await Quiz.deleteMany({ course: course._id });
+  await Discussion.deleteMany({ lesson: { $in: lessonIds } });
+  await LessonProgress.deleteMany({ course: course._id });
+  await Lesson.deleteMany({ course: course._id });
   await Module.deleteMany({ course: course._id });
-
-  // Delete all enrollments
   await Enrollment.deleteMany({ course: course._id });
+  await Certificate.deleteMany({ course: course._id });
 
   // Delete the course itself
   await Course.findByIdAndDelete(course._id);
 
   res.json({ msg: 'Course and all related data deleted successfully' });
 };
+

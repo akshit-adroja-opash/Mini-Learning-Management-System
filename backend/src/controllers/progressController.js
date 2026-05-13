@@ -4,31 +4,11 @@ import Enrollment from "../models/Enrollment.js";
 import Module from "../models/Module.js";
 import Quiz from "../models/Quiz.js";
 import QuizAttempt from "../models/QuizAttempt.js";
+import { isModuleUnlocked } from "../utils/moduleUnlock.js";
 
-const isModuleUnlocked = async (learnerId, moduleId) => {
-  const module = await Module.findById(moduleId);
-  if (!module) return false;
-
-  const previousModule = await Module.findOne({
-    course: module.course,
-    order: module.order - 1,
-  });
-
-  if (!previousModule) return true;
-
-  const previousQuiz = await Quiz.findOne({ module: previousModule._id });
-  if (!previousQuiz) return true;
-
-  return Boolean(await QuizAttempt.exists({
-    learner: learnerId,
-    module: previousModule._id,
-    passed: true,
-  }));
-};
 
 const syncEnrollmentProgress = async (learnerId, courseId, lastAccessedLesson) => {
-  const LessonModel = (await import("../models/Lesson.js")).default;
-  const totalLessonCount = await LessonModel.countDocuments({ course: courseId });
+  const totalLessonCount = await Lesson.countDocuments({ course: courseId });
   const completedLessonCount = await LessonProgress.countDocuments({
     learner: learnerId,
     course: courseId,

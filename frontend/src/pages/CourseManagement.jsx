@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { Plus, Trash2, Edit2, Play, FileText, GripVertical, Upload } from 'lucide-react';
+import QuizManager from '../components/QuizManager';
 
 const CourseManagement = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ const CourseManagement = () => {
   const [openLessonDialog, setOpenLessonDialog] = useState(false);
   const [currentModuleId, setCurrentModuleId] = useState(null);
   const [editingModuleId, setEditingModuleId] = useState(null);
+  const [editingLessonId, setEditingLessonId] = useState(null);
 
   const [moduleData, setModuleData] = useState({ title: '', order: 1 });
   const [lessonData, setLessonData] = useState({ title: '', content: '', videoUrl: '', durationSeconds: 5, order: 1 });
@@ -78,8 +80,27 @@ const CourseManagement = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['course-manage', id]);
       setOpenLessonDialog(false);
+      setEditingLessonId(null);
       setLessonData({ title: '', content: '', videoUrl: '', durationSeconds: 5, order: 1 });
       setLessonVideoUploaded(false);
+    }
+  });
+
+  const updateLessonMutation = useMutation({
+    mutationFn: ({ lessonId, data }) => api.put(`/lessons/${lessonId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['course-manage', id]);
+      setOpenLessonDialog(false);
+      setEditingLessonId(null);
+      setLessonData({ title: '', content: '', videoUrl: '', durationSeconds: 5, order: 1 });
+      setLessonVideoUploaded(false);
+    }
+  });
+
+  const deleteLessonMutation = useMutation({
+    mutationFn: (lessonId) => api.delete(`/lessons/${lessonId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['course-manage', id]);
     }
   });
 
@@ -112,7 +133,10 @@ const CourseManagement = () => {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button size="small" variant="outlined" startIcon={<Plus />} onClick={() => {
+                    setEditingLessonId(null);
                     setCurrentModuleId(module._id);
+                    setLessonData({ title: '', content: '', videoUrl: '', durationSeconds: 5, order: 1 });
+                    setLessonVideoUploaded(false);
                     setOpenLessonDialog(true);
                   }}>
                     Add Lesson
@@ -148,8 +172,28 @@ const CourseManagement = () => {
                         secondary={`${lesson.durationSeconds || 5} min`}
                       />
                       <ListItemSecondaryAction>
-                        <IconButton size="small"><Edit2 size={16} /></IconButton>
-                        <IconButton size="small" color="error"><Trash2 size={16} /></IconButton>
+                        <IconButton size="small" onClick={() => {
+                          setEditingLessonId(lesson._id);
+                          setCurrentModuleId(module._id);
+                          setLessonData({
+                            title: lesson.title,
+                            content: lesson.content || '',
+                            videoUrl: lesson.videoUrl || '',
+                            durationSeconds: lesson.durationSeconds || 5,
+                            order: lesson.order || 1
+                          });
+                          setLessonVideoUploaded(Boolean(lesson.videoUrl));
+                          setOpenLessonDialog(true);
+                        }}>
+                          <Edit2 size={16} />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this lesson?')) {
+                            deleteLessonMutation.mutate(lesson._id);
+                          }
+                        }}>
+                          <Trash2 size={16} />
+                        </IconButton>
                       </ListItemSecondaryAction>
                     </ListItem>
                   ))}
@@ -159,6 +203,10 @@ const CourseManagement = () => {
                     </Box>
                   )}
                 </List>
+                <Divider sx={{ opacity: 0.06 }} />
+                <Box sx={{ px: 3, py: 1.5 }}>
+                  <QuizManager moduleId={module._id} courseId={id} moduleTitle={module.title} />
+                </Box>
               </CardContent>
             </Card>
           ))}
@@ -199,7 +247,7 @@ const CourseManagement = () => {
 
       {/* Lesson Dialog */}
       <Dialog open={openLessonDialog} onClose={() => setOpenLessonDialog(false)} maxWidth="sm" fullWidth slotProps={{ paper: { className: 'glass-card', sx: { bgcolor: '#1e293b' } } }}>
-        <DialogTitle fontWeight={800}>Add New Lesson</DialogTitle>
+        <DialogTitle fontWeight={800}>{editingLessonId ? 'Edit Lesson' : 'Add New Lesson'}</DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField fullWidth label="Lesson Title" value={lessonData.title} onChange={(e) => setLessonData({ ...lessonData, title: e.target.value })} />
@@ -235,8 +283,23 @@ const CourseManagement = () => {
               <Grid xs={6}><TextField fullWidth type="number" label="Display Order" value={lessonData.order} onChange={(e) => setLessonData({ ...lessonData, order: e.target.value })} /></Grid>
             </Grid>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-              <Button onClick={() => setOpenLessonDialog(false)}>Cancel</Button>
-              <Button variant="contained" className="premium-gradient" onClick={() => addLessonMutation.mutate(lessonData)}>Add Lesson</Button>
+              <Button onClick={() => {
+                setOpenLessonDialog(false);
+                setEditingLessonId(null);
+              }}>Cancel</Button>
+              <Button
+                variant="contained"
+                className="premium-gradient"
+                onClick={() => {
+                  if (editingLessonId) {
+                    updateLessonMutation.mutate({ lessonId: editingLessonId, data: { ...lessonData, module: currentModuleId, course: id } });
+                  } else {
+                    addLessonMutation.mutate(lessonData);
+                  }
+                }}
+              >
+                {editingLessonId ? 'Save Changes' : 'Add Lesson'}
+              </Button>
             </Box>
           </Box>
         </DialogContent>

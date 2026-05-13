@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, Typography, Box, Radio, RadioGroup, FormControlLabel, Button, Alert, LinearProgress, Chip } from '@mui/material';
+import { Card, CardContent, Typography, Box, Radio, RadioGroup, FormControlLabel, Button, Alert, LinearProgress, Chip, Stack } from '@mui/material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { CheckCircle2, XCircle } from 'lucide-react';
@@ -40,8 +40,8 @@ const QuizPanel = ({ moduleId, onComplete }) => {
 
   if (result) {
     return (
-      <Card className="glass-card" sx={{ textAlign: 'center', p: 4 }}>
-        <Box sx={{ mb: 3 }}>
+      <Card className="glass-card" sx={{ textAlign: 'center', p: 4, maxWidth: 560, mx: 'auto' }}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
           {result.passed ? (
             <CheckCircle2 size={64} color="#10b981" />
           ) : (
@@ -51,15 +51,19 @@ const QuizPanel = ({ moduleId, onComplete }) => {
         <Typography variant="h4" fontWeight={800} gutterBottom>
           {result.passed ? 'Congratulations!' : 'Try Again'}
         </Typography>
-        <Typography variant="h6" sx={{ mb: 4 }}>
-          Your Score: {result.score}% (Pass threshold: {quiz.passThreshold}%)
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
+          You scored {result.score}% on this quiz.
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 4 }}>
+          Passing threshold is {quiz.passThreshold}%. {result.passed ? 'You have unlocked the next module.' : 'Review the content and try again.'}
         </Typography>
         <Button 
           variant="contained" 
           className="premium-gradient"
+          sx={{ minWidth: 180 }}
           onClick={() => { setResult(null); setCurrentStep(0); setAnswers({}); }}
         >
-          {result.passed ? 'Review Results' : 'Retake Quiz'}
+          {result.passed ? 'View Quiz Again' : 'Retake Quiz'}
         </Button>
       </Card>
     );
@@ -71,13 +75,23 @@ const QuizPanel = ({ moduleId, onComplete }) => {
   }
 
   return (
-    <Card className="glass-card">
+    <Card className="glass-card" sx={{ maxWidth: 720, mx: 'auto' }}>
       <CardContent sx={{ p: 4 }}>
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="subtitle2" color="primary.main" fontWeight={700}>
-            Question {currentStep + 1} of {quiz.questions.length}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" color="primary.main" fontWeight={700} sx={{ mb: 1 }}>
+            {quiz.title || 'Module Quiz'}
           </Typography>
-          <Chip label={`${quiz.passThreshold}% to pass`} size="small" variant="outlined" />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Question {currentStep + 1} of {quiz.questions.length}
+            </Typography>
+            <Chip label={`${quiz.passThreshold}% to pass`} size="small" variant="outlined" />
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={((currentStep + 1) / quiz.questions.length) * 100}
+            sx={{ mt: 2, height: 10, borderRadius: 5, bgcolor: 'rgba(255,255,255,0.08)' }}
+          />
         </Box>
 
         <Typography variant="h5" fontWeight={700} sx={{ mb: 4 }}>
@@ -88,27 +102,38 @@ const QuizPanel = ({ moduleId, onComplete }) => {
           value={answers[currentQuestion._id] || ''}
           onChange={(e) => setAnswers({ ...answers, [currentQuestion._id]: e.target.value })}
         >
-          {currentQuestion.options.map((opt, idx) => (
-            <FormControlLabel
-              key={idx}
-              value={opt._id}
-              control={<Radio />}
-              label={opt.text}
-              sx={{ 
-                mb: 2, 
-                p: 2, 
-                borderRadius: 2, 
-                border: '1px solid rgba(255,255,255,0.05)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
-              }}
-            />
-          ))}
+          <Stack spacing={2}>
+            {currentQuestion.options.map((opt, idx) => (
+              <Box
+                key={idx}
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  bgcolor: answers[currentQuestion._id] === opt._id ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.02)',
+                  transition: 'all 150ms ease',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.04)'
+                  },
+                  cursor: 'pointer'
+                }}
+              >
+                <FormControlLabel
+                  value={opt._id}
+                  control={<Radio />}
+                  label={opt.text}
+                  sx={{ width: '100%', m: 0, '& .MuiFormControlLabel-label': { fontWeight: 500, color: 'inherit' } }}
+                />
+              </Box>
+            ))}
+          </Stack>
         </RadioGroup>
 
-        <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ mt: 6, display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Button 
             disabled={currentStep === 0}
             onClick={() => setCurrentStep(prev => prev - 1)}
+            sx={{ minWidth: 140 }}
           >
             Previous
           </Button>
@@ -117,6 +142,7 @@ const QuizPanel = ({ moduleId, onComplete }) => {
               variant="contained" 
               onClick={() => setCurrentStep(prev => prev + 1)}
               disabled={!answers[currentQuestion._id]}
+              sx={{ minWidth: 180 }}
             >
               Next Question
             </Button>
@@ -126,6 +152,7 @@ const QuizPanel = ({ moduleId, onComplete }) => {
               className="premium-gradient"
               onClick={() => submitMutation.mutate()}
               disabled={submitMutation.isPending || !answers[currentQuestion._id]}
+              sx={{ minWidth: 180 }}
             >
               Submit Quiz
             </Button>

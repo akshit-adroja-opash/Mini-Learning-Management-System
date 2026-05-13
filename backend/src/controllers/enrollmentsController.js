@@ -46,22 +46,33 @@ export const getMyEnrollments = async (req, res) => {
 
   // Filter out enrollments where the course was deleted but the enrollment remains
   const validEnrollments = enrollments.filter(e => e.course !== null);
+  const courseIds = validEnrollments.map((e) => e.course._id);
 
-  // Calculate real-time progress for each enrollment
-  const Lesson = (await import("../models/Lesson.js")).default;
-  const LessonProgress = (await import("../models/LessonProgress.js")).default;
+  const lessonCounts = await Lesson.aggregate([
+    { $match: { course: { $in: courseIds } } },
+    { $group: { _id: "$course", totalLessons: { $sum: 1 } } },
+  ]);
+
+  const completedCounts = await LessonProgress.aggregate([
+    {
+      $match: {
+        learner: req.user._id,
+        course: { $in: courseIds },
+        isCompleted: true,
+      },
+    },
+    { $group: { _id: "$course", completedLessons: { $sum: 1 } } },
+  ]);
+
+  const totalMap = Object.fromEntries(lessonCounts.map((item) => [item._id.toString(), item.totalLessons]));
+  const completedMap = Object.fromEntries(completedCounts.map((item) => [item._id.toString(), item.completedLessons]));
 
   const enrichedEnrollments = await Promise.all(validEnrollments.map(async (enrollment) => {
-    const totalLessons = await Lesson.countDocuments({ course: enrollment.course._id });
-    const completedLessons = await LessonProgress.countDocuments({
-      learner: req.user._id,
-      course: enrollment.course._id,
-      isCompleted: true
-    });
-
+    const courseId = enrollment.course._id.toString();
+    const totalLessons = totalMap[courseId] || 0;
+    const completedLessons = completedMap[courseId] || 0;
     const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-    
-    // Update the enrollment document if it changed (optional but good for persistence)
+
     if (enrollment.progressPercent !== progressPercent) {
       enrollment.progressPercent = progressPercent;
       await enrollment.save();

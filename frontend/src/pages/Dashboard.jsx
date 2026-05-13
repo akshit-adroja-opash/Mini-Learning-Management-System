@@ -3,11 +3,13 @@ import { Container, Grid, Typography, Box, Card, CardContent, Button, Tabs, Tab,
 import { useAuth } from '../context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Book, Trophy, Clock, Settings, Plus, BarChart2, Pencil, Trash2 } from 'lucide-react';
+import { Book, Trophy, Settings, Plus, BarChart2, Pencil, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import InstructorAnalytics from '../components/InstructorAnalytics';
 import CourseForm from '../components/CourseForm';
 import { Dialog, DialogContent, DialogTitle, DialogActions, IconButton } from '@mui/material';
+import CertificateList from '../components/CertificateList';
+import ProfileSettings from '../components/ProfileSettings';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -96,7 +98,6 @@ const Dashboard = () => {
         {[
           { label: 'Courses', value: user.role === 'learner' ? enrollments?.length || 0 : myCourses?.length || 0, icon: <Book size={20} /> },
           { label: 'Completed', value: completedCourseCount, icon: <Trophy size={20} /> },
-          { label: 'Hours Spent', value: '12h', icon: <Clock size={20} /> },
         ].map((stat, i) => (
           <Grid xs={12} sm={4} key={i}>
             <Card className="glass-card">
@@ -218,25 +219,16 @@ const Dashboard = () => {
       )}
 
       {tabValue === 1 && (
-        <Box sx={{ textAlign: 'center', py: 10 }}>
-          <Trophy size={64} style={{ opacity: 0.1, marginBottom: 20 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            {completedCourseCount > 0 ? 'Your completed course certificates are ready.' : 'Complete courses to earn certificates!'}
-          </Typography>
-          {user.role === 'learner' && completedCourseCount > 0 && (
-            <Button component={Link} to="/certificates" variant="contained" className="premium-gradient" sx={{ mt: 2 }}>
-              View Certificates
-            </Button>
-          )}
+        <Box sx={{ py: 4 }}>
+          <CertificateList />
         </Box>
       )}
 
       {tabValue === 2 && user.role === 'instructor' && <InstructorAnalytics />}
 
       {showSettings && tabValue === settingsTab && (
-        <Box sx={{ textAlign: 'center', py: 10 }}>
-          <Settings size={64} style={{ opacity: 0.1, marginBottom: 20 }} />
-          <Typography variant="h6" color="text.secondary">Profile settings coming soon.</Typography>
+        <Box sx={{ py: 4 }}>
+          <ProfileSettings />
         </Box>
       )}
 

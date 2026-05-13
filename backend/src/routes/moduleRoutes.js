@@ -1,5 +1,6 @@
 import express from "express";
-import { protect, authorize } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
 import Module from "../models/Module.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 

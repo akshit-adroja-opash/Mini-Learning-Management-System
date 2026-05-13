@@ -1,10 +1,10 @@
 import { Box, Typography, Button, Paper, Container } from '@mui/material';
-import { Trophy, Download, Share2, ShieldCheck } from 'lucide-react';
+import { Trophy, Download, ShieldCheck } from 'lucide-react';
 
-const CertificateView = ({ courseName, studentName, date, certificateId, verificationUrl, pdfUrl }) => {
+const CertificateView = ({ courseName, studentName, date, certificateId,  pdfUrl }) => {
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const absolutePdfUrl = pdfUrl?.startsWith('http') ? pdfUrl : `${apiBaseUrl}${pdfUrl || ''}`;
-  const absoluteVerificationUrl = verificationUrl?.startsWith('http') ? verificationUrl : `${apiBaseUrl}${verificationUrl || ''}`;
+
   return (
     <Container maxWidth="md" sx={{ py: 10 }}>
       <Paper 
@@ -68,11 +68,7 @@ const CertificateView = ({ courseName, studentName, date, certificateId, verific
               <Typography variant="caption" fontWeight={700}>VERIFIED CONTENT</Typography>
             </Box>
             <Typography variant="caption" color="text.secondary">ID: {certificateId}</Typography>
-            {verificationUrl && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Verify: {absoluteVerificationUrl}
-              </Typography>
-            )}
+
           </Box>
         </Box>
       </Paper>
@@ -87,9 +83,7 @@ const CertificateView = ({ courseName, studentName, date, certificateId, verific
         >
           Download PDF
         </Button>
-        <Button variant="outlined" startIcon={<Share2 />} component="a" href={absoluteVerificationUrl} target="_blank" rel="noreferrer">
-          Verify Certificate
-        </Button>
+
       </Box>
     </Container>
   );
