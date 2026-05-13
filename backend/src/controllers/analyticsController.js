@@ -23,11 +23,11 @@ export const getAnalytics = async (req, res) => {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const trends = await Enrollment.aggregate([
-    { 
-      $match: { 
+    {
+      $match: {
         course: { $in: courseIds },
         createdAt: { $gte: thirtyDaysAgo }
-      } 
+      }
     },
     {
       $group: {
@@ -41,7 +41,7 @@ export const getAnalytics = async (req, res) => {
   // 4. Per-Course Stats
   const courseStats = await Promise.all(instructorCourses.map(async (course) => {
     const enrollments = await Enrollment.countDocuments({ course: course._id });
-    
+
     const progressStats = await Enrollment.aggregate([
       { $match: { course: course._id } },
       { $group: { _id: null, avgProgress: { $avg: "$progressPercent" } } }
@@ -58,8 +58,8 @@ export const getAnalytics = async (req, res) => {
       }
     ]);
 
-    const passRate = passStats[0]?.total 
-      ? Math.round((passStats[0].passed / passStats[0].total) * 100) 
+    const passRate = passStats[0]?.total
+      ? Math.round((passStats[0].passed / passStats[0].total) * 100)
       : 0;
 
     return {
@@ -71,7 +71,7 @@ export const getAnalytics = async (req, res) => {
   }));
 
   // 5. Active Learners & Completion Rate
-  const activeLearners = await Enrollment.countDocuments({ 
+  const activeLearners = await Enrollment.countDocuments({
     course: { $in: courseIds },
     progressPercent: { $gt: 0, $lt: 100 }
   });
@@ -81,12 +81,12 @@ export const getAnalytics = async (req, res) => {
     progressPercent: 100
   });
 
-  const completionRate = totalEnrollments 
-    ? Math.round((completedCount / totalEnrollments) * 100) 
+  const completionRate = totalEnrollments
+    ? Math.round((completedCount / totalEnrollments) * 100)
     : 0;
 
-  res.json({ 
-    totalEnrollments, 
+  res.json({
+    totalEnrollments,
     averageQuizScore: Math.round(quizStats[0]?.avgScore || 0),
     activeLearners,
     completionRate,

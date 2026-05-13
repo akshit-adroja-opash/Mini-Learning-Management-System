@@ -28,14 +28,14 @@ const isModuleUnlocked = async (learnerId, moduleId) => {
 
 const syncEnrollmentProgress = async (learnerId, courseId, lastAccessedLesson) => {
   const LessonModel = (await import("../models/Lesson.js")).default;
-  const totalLessonCount = await LessonModel.countDocuments({ course: courseId, isPublished: true });
+  const totalLessonCount = await LessonModel.countDocuments({ course: courseId });
   const completedLessonCount = await LessonProgress.countDocuments({
     learner: learnerId,
     course: courseId,
     isCompleted: true,
   });
   const progressPercent = totalLessonCount
-    ? Math.round((completedLessonCount / totalLessonCount) * 100)
+    ? Math.min(100, Math.round((completedLessonCount / totalLessonCount) * 100))
     : 0;
 
   await Enrollment.findOneAndUpdate(
@@ -132,6 +132,8 @@ export const markLessonComplete = async (req, res) => {
   }
 
   await progress.save();
+  await syncEnrollmentProgress(req.user._id, lesson.course, lessonId);
+
   res.json(progress);
 };
 

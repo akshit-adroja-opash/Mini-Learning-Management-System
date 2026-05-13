@@ -48,15 +48,6 @@ const LearningPage = () => {
       if (lesson) return { ...lesson, moduleLocked: module.isLocked };
     }
 
-    if (course.promoVideoUrl) {
-      return {
-        _id: 'main',
-        title: 'Main Course Video',
-        videoUrl: course.promoVideoUrl,
-        description: course.description
-      };
-    }
-
     return null;
   })();
 
@@ -92,6 +83,11 @@ const LearningPage = () => {
       </Container>
     );
   }
+
+  const totalLessons = course.modules?.reduce((sum, module) => sum + (module.lessons?.length || 0), 0) || 0;
+  const completedLessons = progressData?.filter((progress) => progress.isCompleted)?.length || 0;
+  const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const isCourseComplete = overallProgress >= 100;
 
   return (
     <Box sx={{ bgcolor: '#020617', minHeight: '100vh', mt: -4 }}>
@@ -249,16 +245,13 @@ const LearningPage = () => {
                 <Typography variant="h6" fontWeight={800} gutterBottom>Course Content</Typography>
                 <Box sx={{ mt: 2 }}>
                   {(() => {
-                    const totalLessons = course.modules?.reduce((sum, m) => sum + (m.lessons?.length || 0), 0) || 0;
-                    const completedLessons = progressData?.filter(p => p.isCompleted)?.length || 0;
-                    const pct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
                     return (
                       <>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="caption" color="text.secondary">Overall Progress</Typography>
-                          <Typography variant="caption" fontWeight={700}>{pct}%</Typography>
+                          <Typography variant="caption" fontWeight={700}>{overallProgress}%</Typography>
                         </Box>
-                        <LinearProgress variant="determinate" value={pct} sx={{ borderRadius: 5, height: 6 }} />
+                        <LinearProgress variant="determinate" value={overallProgress} sx={{ borderRadius: 5, height: 6 }} />
                       </>
                     );
                   })()}
@@ -333,12 +326,14 @@ const LearningPage = () => {
               <Box sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 <Button
                   fullWidth
-                  variant="outlined"
+                  variant={isCourseComplete ? 'contained' : 'outlined'}
                   startIcon={<Trophy size={18} />}
+                  className={isCourseComplete ? 'premium-gradient' : undefined}
+                  disabled={!isCourseComplete}
                   sx={{ borderRadius: 2 }}
-                  onClick={() => navigate(`/certificate/${courseId}`)}
+                  onClick={() => navigate(`/certificates?claim=${courseId}`)}
                 >
-                  Claim Certificate
+                  {isCourseComplete ? 'Claim Certificate' : 'Complete Course First'}
                 </Button>
               </Box>
             </Paper>

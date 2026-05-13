@@ -1,11 +1,11 @@
 import { Container, Typography, Box, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, IconButton } from '@mui/material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Users, Book, BarChart, Trash2, Video, VideoOff } from 'lucide-react';
+import { Users, Book, BarChart, Trash2, Image, ImageOff } from 'lucide-react';
 
 const AdminDashboard = () => {
   const queryClient = useQueryClient();
-
+  
   const deleteUserMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
             <TableRow>
               <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>Instructor</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Promo Video</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Thumbnail</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
             </TableRow>
@@ -147,10 +147,10 @@ const AdminDashboard = () => {
                 <TableCell>{course.title}</TableCell>
                 <TableCell>{course.instructor?.name || 'Unknown'}</TableCell>
                 <TableCell>
-                  {course.promoVideoUrl ? (
-                    <Chip icon={<Video size={14} />} label="Available" size="small" color="success" variant="outlined" />
+                  {course.thumbnailUrl ? (
+                    <Chip icon={<Image size={14} />} label="Available" size="small" color="success" variant="outlined" />
                   ) : (
-                    <Chip icon={<VideoOff size={14} />} label="None" size="small" color="warning" variant="outlined" />
+                    <Chip icon={<ImageOff size={14} />} label="None" size="small" color="warning" variant="outlined" />
                   )}
                 </TableCell>
                 <TableCell>

@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fallbackCourseImage, getData, mediaUrl, postData } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Play, CheckCircle, BookOpen, Lock, ChevronRight, PlayCircle } from 'lucide-react';
-import ReactPlayer from 'react-player';
+import { Play, CheckCircle, BookOpen, Lock, ChevronRight } from 'lucide-react';
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -84,25 +83,12 @@ const CourseDetail = () => {
 
         <Grid xs={12} md={4}>
           <Card className="glass-card" sx={{ position: 'sticky', top: 100, border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-            {course.promoVideoUrl ? (
-              <Box sx={{ position: 'relative', pt: '56.25%', bgcolor: '#000' }}>
-                  <ReactPlayer
-                    url={mediaUrl(course.promoVideoUrl)}
-                    width="100%"
-                    height="100%"
-                    style={{ position: 'absolute', top: 0, left: 0 }}
-                    controls
-                    light={course.thumbnailUrl || true}
-                    playIcon={<PlayCircle size={48} color="#fff" />}
-                  />
-              </Box>
-            ) : (
-              <Box
-                component="img"
-                src={course.thumbnailUrl || course.thumbnail || fallbackCourseImage}
-                sx={{ width: '100%', height: 200, objectFit: 'cover' }}
-              />
-            )}
+            <Box
+              component="img"
+              src={mediaUrl(course.thumbnailUrl) || course.thumbnail || fallbackCourseImage}
+              alt={course.title}
+              sx={{ width: '100%', height: 200, objectFit: 'cover' }}
+            />
             <CardContent sx={{ p: 4 }}>
               <Typography variant="h4" fontWeight={800} sx={{ mb: 1 }}>Free</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Full lifetime access • Certificate of completion</Typography>

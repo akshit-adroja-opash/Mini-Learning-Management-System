@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Box, TextField, Button, Typography, Grid, MenuItem, Alert, CircularProgress } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Save, X, FileVideo, CheckCircle, ImagePlus } from 'lucide-react';
+import { Save, X, CheckCircle, ImagePlus, Link as LinkIcon } from 'lucide-react';
+import { fallbackCourseImage, mediaUrl } from '../services/api';
 
 const CourseForm = ({ onCancel, onSuccess, course }) => {
   const isEdit = Boolean(course?._id);
@@ -12,12 +13,9 @@ const CourseForm = ({ onCancel, onSuccess, course }) => {
     description: course?.description || '',
     category: course?.category || '',
     level: course?.level || 'beginner',
-    thumbnailUrl: course?.thumbnailUrl || '',
-    promoVideoUrl: course?.promoVideoUrl || ''
+    thumbnailUrl: course?.thumbnailUrl || ''
   });
-  const [uploading, setUploading] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState(course?.promoVideoUrl || '');
   const [uploadedThumbnailUrl, setUploadedThumbnailUrl] = useState(course?.thumbnailUrl || '');
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
@@ -63,21 +61,6 @@ const CourseForm = ({ onCancel, onSuccess, course }) => {
       setError('Thumbnail upload failed');
     } finally {
       setThumbnailUploading(false);
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const data = await uploadMedia(file);
-      setUploadedUrl(data.url);
-      setFormData((prev) => ({ ...prev, promoVideoUrl: data.url }));
-    } catch {
-      setError('File upload failed');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -137,18 +120,22 @@ const CourseForm = ({ onCancel, onSuccess, course }) => {
           </TextField>
         </Grid>
         <Grid xs={12}>
-          <TextField
-            fullWidth
-            label="Thumbnail URL"
-            value={formData.thumbnailUrl}
-            onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
-            placeholder="Cloudinary URL or https://images.unsplash.com/..."
-          />
-        </Grid>
-
-        <Grid xs={12}>
           <Typography variant="subtitle2" sx={{ mb: 1.5, opacity: 0.8 }}>Course Thumbnail</Typography>
           <Box sx={{ p: 3, border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
+            <TextField
+              fullWidth
+              label="Thumbnail URL"
+              value={formData.thumbnailUrl}
+              onChange={(e) => {
+                setFormData({ ...formData, thumbnailUrl: e.target.value });
+                setUploadedThumbnailUrl('');
+              }}
+              placeholder="Paste image URL or upload manually"
+              sx={{ mb: 2 }}
+              InputProps={{
+                startAdornment: <LinkIcon size={18} style={{ marginRight: 8, opacity: 0.7 }} />,
+              }}
+            />
             <input
               accept="image/*"
               style={{ display: 'none' }}
@@ -164,42 +151,31 @@ const CourseForm = ({ onCancel, onSuccess, course }) => {
                 disabled={thumbnailUploading}
                 sx={{ px: 4, py: 1.5 }}
               >
-                {thumbnailUploading ? 'Uploading...' : uploadedThumbnailUrl ? 'Change Thumbnail' : 'Upload Thumbnail to Cloudinary'}
+                {thumbnailUploading ? 'Uploading...' : formData.thumbnailUrl ? 'Change Thumbnail Upload' : 'Upload Thumbnail Manually'}
               </Button>
             </label>
             {uploadedThumbnailUrl && (
-              <Typography variant="caption" display="block" color="success.main" sx={{ mt: 2 }}>
-                Thumbnail uploaded successfully
+              <Typography variant="caption" color="success.main" sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                <CheckCircle size={14} /> Thumbnail uploaded successfully
               </Typography>
             )}
-          </Box>
-        </Grid>
-
-        <Grid xs={12}>
-          <Typography variant="subtitle2" sx={{ mb: 1.5, opacity: 0.8 }}>Promo Video</Typography>
-          <Box sx={{ p: 4, border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-            <input
-              accept="video/*"
-              style={{ display: 'none' }}
-              id="video-upload"
-              type="file"
-              onChange={handleFileUpload}
-            />
-            <label htmlFor="video-upload">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={uploading ? <CircularProgress size={20} /> : <FileVideo size={20} />}
-                disabled={uploading}
-                sx={{ px: 4, py: 1.5 }}
-              >
-                {uploading ? 'Uploading...' : uploadedUrl ? 'Change Video' : 'Upload Course Promo Video to Cloudinary'}
-              </Button>
-            </label>
-            {uploadedUrl && (
-              <Typography variant="caption" display="block" color="success.main" sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                <CheckCircle size={14} /> Video Uploaded Successfully
-              </Typography>
+            {formData.thumbnailUrl && (
+              <Box
+                component="img"
+                src={mediaUrl(formData.thumbnailUrl) || fallbackCourseImage}
+                alt="Course thumbnail preview"
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  maxWidth: 360,
+                  aspectRatio: '16 / 9',
+                  objectFit: 'cover',
+                  borderRadius: 2,
+                  mt: 2.5,
+                  mx: 'auto',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}
+              />
             )}
           </Box>
         </Grid>

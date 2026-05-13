@@ -38,6 +38,10 @@ function App() {
             element={user ? <Dashboard /> : <Navigate to="/login" />} 
           />
           <Route 
+            path="/certificates" 
+            element={user ? <CertificatePage /> : <Navigate to="/login" />} 
+          />
+          <Route 
             path="/certificate/:courseId" 
             element={user ? <CertificatePage /> : <Navigate to="/login" />} 
           />

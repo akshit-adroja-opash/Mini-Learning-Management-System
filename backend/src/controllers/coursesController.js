@@ -2,13 +2,16 @@ import Course from "../models/Course.js";
 import mongoose from "mongoose";
 
 export const createCourse = async (req, res) => {
-  const { title, thumbnailUrl } = req.body;
+  const { title } = req.body;
+  const courseData = { ...req.body };
+  delete courseData.promoVideoUrl;
   
   const slug = title.toLowerCase().split(' ').join('-') + '-' + Date.now();
 
   const course = await Course.create({
-    ...req.body,
-    status: req.body.status || 'published',
+    ...courseData,
+    title,
+    status: courseData.status || 'published',
     slug,
     instructor: req.user._id
   });
@@ -212,7 +215,7 @@ export const updateCourse = async (req, res) => {
     return res.status(403).json({ msg: 'Not authorized to update this course' });
   }
 
-  const allowedFields = ['title', 'description', 'category', 'level', 'thumbnailUrl', 'promoVideoUrl', 'status', 'price'];
+  const allowedFields = ['title', 'description', 'category', 'level', 'thumbnailUrl', 'status', 'price'];
   allowedFields.forEach((field) => {
     if (req.body[field] !== undefined) course[field] = req.body[field];
   });

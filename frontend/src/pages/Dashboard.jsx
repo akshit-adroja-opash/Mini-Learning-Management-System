@@ -29,6 +29,10 @@ const Dashboard = () => {
     enabled: user?.role === 'learner',
   });
 
+  const completedCourseCount = user.role === 'learner'
+    ? enrollments?.filter((item) => (item.progressPercent || 0) >= 100).length || 0
+    : 0;
+
   const { data: myCourses } = useQuery({
     queryKey: ['instructor-courses'],
     queryFn: async () => {
@@ -91,7 +95,7 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 6 }}>
         {[
           { label: 'Courses', value: user.role === 'learner' ? enrollments?.length || 0 : myCourses?.length || 0, icon: <Book size={20} /> },
-          { label: 'Completed', value: '0', icon: <Trophy size={20} /> },
+          { label: 'Completed', value: completedCourseCount, icon: <Trophy size={20} /> },
           { label: 'Hours Spent', value: '12h', icon: <Clock size={20} /> },
         ].map((stat, i) => (
           <Grid xs={12} sm={4} key={i}>
@@ -216,7 +220,14 @@ const Dashboard = () => {
       {tabValue === 1 && (
         <Box sx={{ textAlign: 'center', py: 10 }}>
           <Trophy size={64} style={{ opacity: 0.1, marginBottom: 20 }} />
-          <Typography variant="h6" color="text.secondary">Complete courses to earn certificates!</Typography>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {completedCourseCount > 0 ? 'Your completed course certificates are ready.' : 'Complete courses to earn certificates!'}
+          </Typography>
+          {user.role === 'learner' && completedCourseCount > 0 && (
+            <Button component={Link} to="/certificates" variant="contained" className="premium-gradient" sx={{ mt: 2 }}>
+              View Certificates
+            </Button>
+          )}
         </Box>
       )}
 
