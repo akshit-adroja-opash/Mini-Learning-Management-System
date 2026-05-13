@@ -108,11 +108,11 @@ const CertificateList = ({ claimCourseId }) => {
                   Completed on {formatDate(item.completedAt)}
                 </Typography>
 
-                {certificate && (
+                {/* {certificate && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, fontSize: '0.65rem' }}>
                     ID: {certificate.certificateId}
                   </Typography>
-                )}
+                )} */}
 
                 <Box sx={{ mt: 2 }}>
                   {certificate ? (
